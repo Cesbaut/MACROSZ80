@@ -1,9 +1,13 @@
 import re
 import tkinter as tk
-from tkinter import messagebox, filedialog
+from tkinter import filedialog, messagebox
+import customtkinter as ctk  # Importamos customtkinter
+
+# Configuración de customtkinter
+ctk.set_appearance_mode("dark")  # Modo oscuro
+ctk.set_default_color_theme("blue")  # Tema azul
 
 def expand_macros(input_code):
-    # Expansor de macros como antes (sin cambios)
     lines = [line.strip() for line in input_code.split('\n')]
     macros = {}
     expanded_code = []
@@ -102,73 +106,46 @@ def load_from_file():
         except Exception as e:
             messagebox.showerror("Error", f"No se pudo cargar el archivo: {str(e)}")
 
-# Efecto hover para botones
-def on_enter(button):
-    button.configure(bg="#0074D9")  # Azul más claro
+# Crear ventana principal
+root = ctk.CTk()
+root.title("MACROZ80")  # Cambié el título aquí
+root.geometry("900x1000")
 
-def on_leave(button):
-    button.configure(bg="#005bb5")  # Azul más oscuro
-
-# Interfaz gráfica con Tkinter
-root = tk.Tk()
-root.title("Expansor de Macros")
-root.geometry("800x1000")
-root.configure(bg="#000000")
-
-# Estilo global
-montserrat_font_large = ("Montserrat", 12)
-montserrat_bold_font = ("Montserrat", 14, "bold")
+# Cambiar color a azul menos claro
+dark_blue = "#4F91A6"  # Un tono más oscuro de azul
 
 # Crear widgets
-frame = tk.Frame(root, padx=10, pady=10, bg="#1c1c1c")
-frame.pack(fill=tk.BOTH, expand=True)
+title_label = ctk.CTkLabel(root, text="MACROZ80", font=("Montserrat", 30, "bold"))  # Título más grande
+title_label.pack(pady=20)
 
-load_button = tk.Button(
-    frame, text="Importar Archivo", font=montserrat_bold_font, bg="#005bb5", fg="white",
-    command=load_from_file, relief="flat", highlightthickness=0
-)
-load_button.pack(pady=(0, 10), ipadx=10)
+# Botón Importar Archivo más pequeño
+load_button = ctk.CTkButton(root, text="Importar Archivo", command=load_from_file, width=160, height=40, corner_radius=20, fg_color=dark_blue, text_color="black", font=("Montserrat", 16))  # Botón más pequeño
+load_button.pack(anchor="w", padx=40, pady=10)  # Alineado a la izquierda
 
-# Título input alineado a la izquierda
-input_label = tk.Label(frame, text="Código con Macros:", font=montserrat_font_large, bg="#1c1c1c", fg="white", anchor="w")
-input_label.pack(fill=tk.X, padx=100)
+input_label = ctk.CTkLabel(root, text="Código con Macros:", font=("Montserrat", 18))  # Letra más grande
+input_label.pack(anchor="w", padx=40)
 
-input_text = tk.Text(frame, height=10, bg="#2b2b2b", fg="white", font=montserrat_font_large, insertbackground="white", wrap=tk.WORD, relief="flat")
-input_text.pack(fill=tk.X, expand=True, pady=(0, 10), ipadx=10, padx=100)
+input_text = ctk.CTkTextbox(root, height=300, font=("Consolas", 16), corner_radius=15)  # Letra más grande en el cuadro de texto
+input_text.pack(fill="x", padx=40, pady=10)
 
-expand_button = tk.Button(
-    frame, text="Expandir Macros", font=montserrat_bold_font, bg="#005bb5", fg="white",
-    command=handle_expand, relief="flat", highlightthickness=0, height=2
-)
-expand_button.pack(pady=(10, 10), ipadx=10)
+# Botón Expandir Macros más grande
+expand_button = ctk.CTkButton(root, text="Expandir Macros", command=handle_expand, height=60, corner_radius=20, fg_color=dark_blue, text_color="black", font=("Montserrat", 16))  # Botón un poco más grande
+expand_button.pack(pady=10)
 
-# Título output alineado a la izquierda
-output_label = tk.Label(frame, text="Código Expandido:", font=montserrat_font_large, bg="#1c1c1c", fg="white", anchor="w")
-output_label.pack(fill=tk.X, padx=100)
+output_label = ctk.CTkLabel(root, text="Código Expandido:", font=("Montserrat", 18))  # Letra más grande
+output_label.pack(anchor="w", padx=40)
 
-output_text = tk.Text(frame, height=10, bg="#2b2b2b", fg="white", font=montserrat_font_large, insertbackground="white", wrap=tk.WORD, relief="flat")
-output_text.pack(fill=tk.X, expand=True, pady=(0, 10), ipadx=10, padx=100)
+output_text = ctk.CTkTextbox(root, height=300, font=("Consolas", 16), corner_radius=15)  # Letra más grande en el cuadro de texto
+output_text.pack(fill="x", padx=40, pady=10)
 
-button_frame = tk.Frame(frame, bg="#1c1c1c")
-button_frame.pack(fill=tk.X, pady=(5, 0))
+button_frame = ctk.CTkFrame(root)
+button_frame.pack(fill="x", pady=10, padx=40)
 
-copy_button = tk.Button(
-    button_frame, text="Copiar al Portapapeles", font=montserrat_bold_font, bg="#005bb5", fg="white",
-    command=copy_to_clipboard, relief="flat", highlightthickness=0
-)
-copy_button.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
+copy_button = ctk.CTkButton(button_frame, text="Copiar al Portapapeles", command=copy_to_clipboard, corner_radius=20, fg_color=dark_blue, text_color="black", font=("Montserrat", 16))  # Botón más pequeño
+copy_button.pack(side="left", expand=True, fill="x", padx=5)
 
-save_button = tk.Button(
-    button_frame, text="Guardar en Archivo", font=montserrat_bold_font, bg="#005bb5", fg="white",
-    command=save_to_file, relief="flat", highlightthickness=0
-)
-save_button.pack(side=tk.LEFT, fill=tk.X, expand=True)
-
-# Aplicar hover a botones
-for button in [load_button, expand_button, copy_button, save_button]:
-    button.bind("<Enter>", lambda e, b=button: on_enter(b))
-    button.bind("<Leave>", lambda e, b=button: on_leave(b))
+save_button = ctk.CTkButton(button_frame, text="Guardar en Archivo", command=save_to_file, corner_radius=20, fg_color=dark_blue, text_color="black", font=("Montserrat", 16))  # Botón más pequeño
+save_button.pack(side="left", expand=True, fill="x", padx=5)
 
 # Iniciar la aplicación
 root.mainloop()
-
