@@ -29,6 +29,14 @@ def expand_macros(input_code):
             continue
         if line == 'ENDM':
             in_macro = False
+            # Validar que los parámetros definidos se utilicen en el cuerpo de la macro
+            for macro_line in macro_content:
+                for word in re.findall(r'\b\w+\b', macro_line):
+                    if word not in macro_params and word not in ["LD", "ADD", "(", ")", "A"]:
+                        raise ValueError(
+                            f"Error en la macro '{macro_name}': "
+                            f"El parámetro '{word}' no está definido en la cabecera."
+                        )
             macros[macro_name] = {"content": macro_content, "params": macro_params}
             continue
         if in_macro:
@@ -45,6 +53,12 @@ def expand_macros(input_code):
                 args = [arg.strip() for arg in args_string.split(',')]
                 macro_body = macros[call_name]["content"]
                 macro_params = macros[call_name]["params"]
+
+                if len(args) != len(macro_params):
+                    raise ValueError(
+                        f"Error: La macro '{call_name}' esperaba {len(macro_params)} argumentos, "
+                        f"pero se proporcionaron {len(args)}."
+                    )
 
                 for macro_line in macro_body:
                     expanded_line = macro_line
@@ -108,44 +122,62 @@ def load_from_file():
 
 # Crear ventana principal
 root = ctk.CTk()
-root.title("MACROZ80")  # Cambié el título aquí
+root.title("MACROZ80")
 root.geometry("900x1000")
 
 # Cambiar color a azul menos claro
 dark_blue = "#4F91A6"  # Un tono más oscuro de azul
 
 # Crear widgets
-title_label = ctk.CTkLabel(root, text="MACROZ80", font=("Montserrat", 30, "bold"))  # Título más grande
+title_label = ctk.CTkLabel(root, text="MACROZ80", font=("Montserrat", 30, "bold"))
 title_label.pack(pady=20)
 
-# Botón Importar Archivo más pequeño
-load_button = ctk.CTkButton(root, text="Importar Archivo", command=load_from_file, width=160, height=40, corner_radius=20, fg_color=dark_blue, text_color="black", font=("Montserrat", 16))  # Botón más pequeño
-load_button.pack(anchor="w", padx=40, pady=10)  # Alineado a la izquierda
+load_button = ctk.CTkButton(root, text="Importar Archivo", command=load_from_file, width=160, height=40, corner_radius=20, fg_color=dark_blue, text_color="black", font=("Montserrat", 16))
+load_button.pack(anchor="w", padx=40, pady=10)
 
-input_label = ctk.CTkLabel(root, text="Código con Macros:", font=("Montserrat", 18))  # Letra más grande
+input_label = ctk.CTkLabel(root, text="Código con Macros:", font=("Montserrat", 18))
 input_label.pack(anchor="w", padx=40)
 
-input_text = ctk.CTkTextbox(root, height=300, font=("Consolas", 16), corner_radius=15)  # Letra más grande en el cuadro de texto
+input_text = ctk.CTkTextbox(root, height=300, font=("Consolas", 16), corner_radius=15)
 input_text.pack(fill="x", padx=40, pady=10)
 
-# Botón Expandir Macros más grande
-expand_button = ctk.CTkButton(root, text="Expandir Macros", command=handle_expand, height=60, corner_radius=20, fg_color=dark_blue, text_color="black", font=("Montserrat", 16))  # Botón un poco más grande
+expand_button = ctk.CTkButton(root, text="Expandir Macros", command=handle_expand, height=60, corner_radius=20, fg_color=dark_blue, text_color="black", font=("Montserrat", 16))
 expand_button.pack(pady=10)
 
-output_label = ctk.CTkLabel(root, text="Código Expandido:", font=("Montserrat", 18))  # Letra más grande
+output_label = ctk.CTkLabel(root, text="Código Expandido:", font=("Montserrat", 18))
 output_label.pack(anchor="w", padx=40)
 
-output_text = ctk.CTkTextbox(root, height=300, font=("Consolas", 16), corner_radius=15)  # Letra más grande en el cuadro de texto
+output_text = ctk.CTkTextbox(root, height=300, font=("Consolas", 16), corner_radius=15)
 output_text.pack(fill="x", padx=40, pady=10)
 
 button_frame = ctk.CTkFrame(root)
 button_frame.pack(fill="x", pady=10, padx=40)
 
-copy_button = ctk.CTkButton(button_frame, text="Copiar al Portapapeles", command=copy_to_clipboard, corner_radius=20, fg_color=dark_blue, text_color="black", font=("Montserrat", 16))  # Botón más pequeño
+copy_button = ctk.CTkButton(button_frame, text="Copiar al Portapapeles", command=copy_to_clipboard, corner_radius=20, fg_color=dark_blue, text_color="black", font=("Montserrat", 16))
 copy_button.pack(side="left", expand=True, fill="x", padx=5)
 
-save_button = ctk.CTkButton(button_frame, text="Guardar en Archivo", command=save_to_file, corner_radius=20, fg_color=dark_blue, text_color="black", font=("Montserrat", 16))  # Botón más pequeño
+save_button = ctk.CTkButton(button_frame, text="Guardar en Archivo", command=save_to_file, corner_radius=20, fg_color=dark_blue, text_color="black", font=("Montserrat", 16))
 save_button.pack(side="left", expand=True, fill="x", padx=5)
 
 # Iniciar la aplicación
 root.mainloop()
+
+
+# CODIGO DE PRUEBA
+# SUMAR: MACRO num1, num2, resultado8
+#     LD A, num1
+#     ADD A, num2
+#     LD (resultado), A
+# ENDM
+
+# ORG 0000h
+
+# NUM1: DB 5
+# NUM2: DB 10
+# RESULT: DB 0
+
+# INICIO:
+#     SUMAR NUM1, NUM2, RESULT
+#     JP FIN
+
+# FIN:
