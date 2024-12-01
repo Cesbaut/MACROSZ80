@@ -1,33 +1,30 @@
 import re
 import tkinter as tk
 from tkinter import filedialog, messagebox
-import customtkinter as ctk  # Importamos customtkinter para una mejor apariencia de la interfaz
+import customtkinter as ctk  # Importamos customtkinter
 
 # Configuración de customtkinter
-ctk.set_appearance_mode("dark")  # Establece el modo oscuro para la aplicación
-ctk.set_default_color_theme("blue")  # Define el tema de color azul por defecto
+ctk.set_appearance_mode("dark")  # Modo oscuro
+ctk.set_default_color_theme("blue")  # Tema azul
 
-# Función para expandir macros en el código de entrada
 def expand_macros(input_code):
-    # Limpia y divide el código de entrada en líneas individuales
     lines = [line.strip() for line in input_code.split('\n')]
-    macros = {}  # Diccionario para almacenar las macros definidas
-    expanded_code = []  # Lista para almacenar el código después de expandir macros
-    in_macro = False  # Indicador de si se está procesando una macro
-    macro_name = ''  # Nombre de la macro actual
-    macro_content = []  # Contenido de la macro actual
-    macro_params = []  # Parámetros de la macro
-    defined_labels = set()  # Conjunto para almacenar etiquetas definidas
+    macros = {}
+    expanded_code = []
+    in_macro = False
+    macro_name = ''
+    macro_content = []
+    macro_params = []
+    defined_labels = set()
 
     # Primera pasada: identificar etiquetas y definiciones
     for line in lines:
         label_match = re.match(r'^(\w+):', line)
         if label_match:
-            defined_labels.add(label_match.group(1))  # Agrega la etiqueta al conjunto si la encuentra
+            defined_labels.add(label_match.group(1))
 
     # Segunda pasada: procesar macros y validaciones
     for line in lines:
-        # Identifica el inicio de una macro y extrae su nombre y parámetros
         if ': MACRO' in line:
             in_macro = True
             parts = line.split(':')
@@ -36,29 +33,27 @@ def expand_macros(input_code):
                 param.strip()
                 for param in parts[1].replace('MACRO', '').strip().split(',')
             ]
-            macro_content = []  # Reinicia el contenido de la macro
+            macro_content = []
             continue
-        # Marca el final de la macro
         if line == 'ENDM':
             in_macro = False
-            # Verifica que todos los parámetros utilizados en la macro estén definidos
+            # Validar que los parámetros utilizados en el cuerpo de la macro estén definidos
             for macro_line in macro_content:
                 for word in re.findall(r'\b\w+\b', macro_line):
-                    if word not in macro_params and word not in defined_labels and not re.match(r'^[a-zA-Z0-9_]+$', word):
+                    # Verificar que la palabra no sea un argumento de la macro ni una etiqueta definida
+                    if word not in macro_params and word not in defined_labels and not re.match(r'^[A-Z]+$', word):
                         raise ValueError(
                             f"Error en la macro '{macro_name}': "
                             f"El parámetro o etiqueta '{word}' no está definido."
                         )
-            macros[macro_name] = {"content": macro_content, "params": macro_params}  # Almacena la macro en el diccionario
+            macros[macro_name] = {"content": macro_content, "params": macro_params}
             continue
 
-        # Si la línea está dentro de una macro, la agrega al contenido de la macro
         if in_macro:
             macro_content.append(line)
         else:
-            expanded_code.append(line)  # Agrega la línea al código expandido si no es parte de una macro
+            expanded_code.append(line)
 
-    # Expande las macros encontradas en el código original
     final_code = []
     for line in expanded_code:
         macro_call_match = re.match(r'^(\w+)\s*(.*)$', line)
@@ -69,14 +64,12 @@ def expand_macros(input_code):
                 macro_body = macros[call_name]["content"]
                 macro_params = macros[call_name]["params"]
 
-                # Verifica que la cantidad de argumentos proporcionados coincida con los parámetros de la macro
                 if len(args) != len(macro_params):
                     raise ValueError(
                         f"Error: La macro '{call_name}' esperaba {len(macro_params)} argumentos, "
                         f"pero se proporcionaron {len(args)}."
                     )
 
-                # Reemplaza los nombres de los parámetros de la macro con los argumentos proporcionados
                 for macro_line in macro_body:
                     expanded_line = macro_line
                     for index, arg in enumerate(args):
@@ -84,13 +77,12 @@ def expand_macros(input_code):
                         expanded_line = re.sub(rf'\b{macro_arg}\b', arg, expanded_line)
                     final_code.append(expanded_line)
             else:
-                final_code.append(line)  # Si la macro no está definida, agrega la línea sin cambios
+                final_code.append(line)
         else:
-            final_code.append(line)  # Agrega líneas que no son llamadas a macros
+            final_code.append(line)
 
-    return '\n'.join(final_code)  # Devuelve el código final con las macros expandidas
+    return '\n'.join(final_code)
 
-# Función para manejar la expansión de macros al hacer clic en el botón
 def handle_expand():
     try:
         input_code = input_text.get("1.0", tk.END).strip()
@@ -98,9 +90,8 @@ def handle_expand():
         output_text.delete("1.0", tk.END)
         output_text.insert("1.0", expanded_code)
     except Exception as e:
-        messagebox.showerror("Error", str(e))  # Muestra un mensaje de error si hay algún problema
+        messagebox.showerror("Error", str(e))
 
-# Función para copiar el código expandido al portapapeles
 def copy_to_clipboard():
     expanded_code = output_text.get("1.0", tk.END).strip()
     if expanded_code:
@@ -109,9 +100,8 @@ def copy_to_clipboard():
         root.update()
         messagebox.showinfo("Copiar", "Código expandido copiado al portapapeles.")
     else:
-        messagebox.showwarning("Advertencia", "No hay código expandido para copiar.")  # Muestra una advertencia si está vacío
+        messagebox.showwarning("Advertencia", "No hay código expandido para copiar.")
 
-# Función para guardar el código expandido en un archivo
 def save_to_file():
     expanded_code = output_text.get("1.0", tk.END).strip()
     if expanded_code:
@@ -124,9 +114,8 @@ def save_to_file():
                 file.write(expanded_code)
             messagebox.showinfo("Guardar", f"Código expandido guardado en: {file_path}")
     else:
-        messagebox.showwarning("Advertencia", "No hay código expandido para guardar.")  # Muestra una advertencia si está vacío
+        messagebox.showwarning("Advertencia", "No hay código expandido para guardar.")
 
-# Función para cargar el contenido de un archivo en el área de texto de entrada
 def load_from_file():
     file_path = filedialog.askopenfilename(
         filetypes=[("Archivos de texto", "*.txt"), ("Todos los archivos", "*.*")]
@@ -139,17 +128,17 @@ def load_from_file():
                 input_text.insert("1.0", content)
                 messagebox.showinfo("Cargar", f"Archivo cargado desde: {file_path}")
         except Exception as e:
-            messagebox.showerror("Error", f"No se pudo cargar el archivo: {str(e)}")  # Muestra un mensaje de error si falla la carga
+            messagebox.showerror("Error", f"No se pudo cargar el archivo: {str(e)}")
 
-# Crear la ventana principal
+# Crear ventana principal
 root = ctk.CTk()
 root.title("MACROZ80")
 root.geometry("900x1000")
 
-# Color azul oscuro para los botones
-dark_blue = "#4F91A6"
+# Cambiar color a azul menos claro
+dark_blue = "#4F91A6"  # Un tono más oscuro de azul
 
-# Crear widgets de la interfaz
+# Crear widgets
 title_label = ctk.CTkLabel(root, text="MACROZ80", font=("Montserrat", 30, "bold"))
 title_label.pack(pady=20)
 
