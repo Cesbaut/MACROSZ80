@@ -15,7 +15,15 @@ def expand_macros(input_code):
     macro_name = ''
     macro_content = []
     macro_params = []
+    defined_labels = set()
 
+    # Primera pasada: identificar etiquetas y definiciones
+    for line in lines:
+        label_match = re.match(r'^(\w+):', line)
+        if label_match:
+            defined_labels.add(label_match.group(1))
+
+    # Segunda pasada: procesar macros y validaciones
     for line in lines:
         if ': MACRO' in line:
             in_macro = True
@@ -29,16 +37,18 @@ def expand_macros(input_code):
             continue
         if line == 'ENDM':
             in_macro = False
-            # Validar que los parámetros definidos se utilicen en el cuerpo de la macro
+            # Validar que los parámetros utilizados en el cuerpo de la macro estén definidos
             for macro_line in macro_content:
                 for word in re.findall(r'\b\w+\b', macro_line):
-                    if word not in macro_params and word not in ["LD", "ADD", "(", ")", "A"]:
+                    # Verificar que la palabra no sea un argumento de la macro ni una etiqueta definida
+                    if word not in macro_params and word not in defined_labels and not re.match(r'^[A-Z]+$', word):
                         raise ValueError(
                             f"Error en la macro '{macro_name}': "
-                            f"El parámetro '{word}' no está definido en la cabecera."
+                            f"El parámetro o etiqueta '{word}' no está definido."
                         )
             macros[macro_name] = {"content": macro_content, "params": macro_params}
             continue
+
         if in_macro:
             macro_content.append(line)
         else:
@@ -161,23 +171,3 @@ save_button.pack(side="left", expand=True, fill="x", padx=5)
 
 # Iniciar la aplicación
 root.mainloop()
-
-
-# CODIGO DE PRUEBA
-# SUMAR: MACRO num1, num2, resultado8
-#     LD A, num1
-#     ADD A, num2
-#     LD (resultado), A
-# ENDM
-
-# ORG 0000h
-
-# NUM1: DB 5
-# NUM2: DB 10
-# RESULT: DB 0
-
-# INICIO:
-#     SUMAR NUM1, NUM2, RESULT
-#     JP FIN
-
-# FIN:
